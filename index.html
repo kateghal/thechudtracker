@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#214f3b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Chud Tracker" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>The Chud Tracker</title>
+  <style>
+    :root{
+      --bg:#f4f7f3;--panel:#ffffff;--panel2:#eef4ef;--text:#173026;--muted:#728078;
+      --forest:#214f3b;--sage:#93ad9d;--sage2:#dce9df;--blue:#4e78a8;--blue2:#dce8f5;
+      --amber:#c99043;--red:#b86565;--border:#dde5de;--shadow:0 10px 28px rgba(33,79,59,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{padding-bottom:calc(82px + env(safe-area-inset-bottom))}
+    button,input,select,textarea{font:inherit}
+    .app{max-width:760px;margin:0 auto;min-height:100vh}
+    header{padding:calc(16px + env(safe-area-inset-top)) 18px 12px;position:sticky;top:0;background:rgba(244,247,243,.92);backdrop-filter:blur(14px);z-index:5;border-bottom:1px solid rgba(221,229,222,.8)}
+    .brand{font-size:22px;font-weight:850;letter-spacing:-.5px}.brand small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+    main{padding:14px 14px 28px}
+    .screen{display:none}.screen.active{display:block}
+    .hero,.card{background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow)}
+    .hero{padding:18px;background:linear-gradient(135deg,#fbfdfb,#edf4ef)}
+    .hero h2{margin:0;font-size:20px;letter-spacing:-.3px}.hero p{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    .card{padding:16px}.label{font-size:11px;text-transform:uppercase;letter-spacing:.65px;color:var(--muted);font-weight:750}
+    .metric{font-size:27px;font-weight:850;letter-spacing:-.8px;margin:7px 0 2px}.delta{font-size:11px;color:var(--muted)}
+    .section-title{display:flex;justify-content:space-between;align-items:end;margin:22px 2px 10px}.section-title h2{margin:0;font-size:18px}
+    .section-title span{font-size:11px;color:var(--muted)}
+    .coach{display:flex;gap:11px;padding:13px 0;border-top:1px solid var(--border)}.coach:first-of-type{border-top:0}
+    .icon{width:34px;height:34px;border-radius:10px;background:var(--sage2);display:grid;place-items:center;font-weight:850;flex:0 0 auto}
+    .coach strong{display:block;font-size:13px;margin-bottom:3px}.coach span{font-size:12px;line-height:1.45;color:var(--muted)}
+    .pill{display:inline-flex;padding:6px 9px;border-radius:999px;background:var(--sage2);font-size:11px;font-weight:750;color:var(--forest);margin-top:8px}
+    .form{display:grid;gap:12px}.form.two{grid-template-columns:1fr 1fr}
+    label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:12px;font-weight:700}
+    input,select,textarea{width:100%;border:1px solid var(--border);background:white;color:var(--text);padding:13px 12px;border-radius:12px;min-height:46px}
+    textarea{min-height:130px}
+    .btn{width:100%;border:0;border-radius:13px;padding:14px 16px;background:var(--forest);color:white;font-weight:800;min-height:48px}
+    .btn.secondary{background:var(--blue)}.btn.ghost{background:var(--panel2);color:var(--forest)}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .chart{height:220px}.chart svg{width:100%;height:100%}.axis{stroke:#dfe6df;stroke-width:1}.line{fill:none;stroke:var(--forest);stroke-width:3}.line2{fill:none;stroke:var(--blue);stroke-width:2.5}
+    table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--border)}th{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.45px}
+    .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .note,.insight{font-size:12px;line-height:1.45;color:var(--muted)}.insight{background:var(--blue2);border-left:4px solid var(--blue);padding:11px;border-radius:9px;color:var(--text)}
+    .scorebar{height:9px;background:#edf1ed;border-radius:999px;overflow:hidden;margin-top:9px}.scorebar i{display:block;height:100%;background:var(--forest);border-radius:999px}
+    nav.bottom{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border-top:1px solid var(--border);padding:8px 8px calc(8px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,1fr);z-index:10}
+    nav.bottom button{border:0;background:transparent;color:var(--muted);padding:8px 3px;font-size:10px;font-weight:700;border-radius:10px;min-height:52px}
+    nav.bottom button.active{color:var(--forest);background:var(--panel2)}
+    .navicon{display:block;font-size:18px;margin-bottom:2px}
+    .moregrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .moregrid button{border:1px solid var(--border);background:white;border-radius:16px;padding:18px;text-align:left;font-weight:800;color:var(--text)}
+    .moregrid span{display:block;color:var(--muted);font-size:11px;font-weight:600;margin-top:4px}
+    @media(max-width:430px){.grid,.form.two,.actions,.moregrid{grid-template-columns:1fr}.metric{font-size:25px}}
+  </style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand">The Chud Tracker<small>adaptive recomp intelligence</small></div>
+  <span class="pill" id="phasePill">Cycle: —</span>
+</header>
+
+<main>
+  <section id="home" class="screen active">
+    <div class="hero">
+      <h2 id="headline">Your body is a trend, not a datapoint.</h2>
+      <p id="narrative">Log consistently and The Chud Tracker will tell you whether to hold, cut, eat more, or simply ignore scale noise.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="label">Trend weight</div><div class="metric" id="trendWeight">—</div><div class="delta" id="trendDelta">7-day smoothed</div></div>
+      <div class="card"><div class="label">Adaptive maintenance</div><div class="metric" id="adaptiveTdee">—</div><div class="delta">from intake + weight trend</div></div>
+      <div class="card"><div class="label">Estimated deficit</div><div class="metric" id="deficit">—</div><div class="delta">vs adaptive maintenance</div></div>
+      <div class="card"><div class="label">Strength momentum</div><div class="metric" id="strengthMomentum">—</div><div class="delta">e1RM trend</div></div>
+    </div>
+
+    <div class="section-title"><h2>Weight signal</h2><span>raw vs trend</span></div>
+    <div class="card"><div class="chart"><svg id="weightChart"></svg></div><div class="note">Blue = smoothed trend. Green = raw weight.</div></div>
+
+    <div class="section-title"><h2>This week’s call</h2></div>
+    <div class="card">
+      <div class="coach"><div class="icon">1</div><div><strong id="c1t">Build signal</strong><span id="c1b">Log at least 14 consistent days before reacting to the model.</span></div></div>
+      <div class="coach"><div class="icon">2</div><div><strong id="c2t">Protect performance</strong><span id="c2b">Strength is a guardrail against dieting too aggressively.</span></div></div>
+      <div class="coach"><div class="icon">3</div><div><strong id="c3t">Use cycle context</strong><span id="c3b">Cycle phase explains some scale noise, but never overrides a multi-week trend.</span></div></div>
+    </div>
+  </section>
+
+  <section id="log" class="screen">
+    <div class="section-title"><h2>Daily check-in</h2><span>60 seconds</span></div>
+    <div class="card">
+      <div class="form two">
+        <label>Date<input id="dDate" type="date"></label>
+        <label>Morning weight (lb)<input id="dWeight" type="number" step=".1" inputmode="decimal"></label>
+        <label>Calories<input id="dCalories" type="number" inputmode="numeric"></label>
+        <label>Protein (g)<input id="dProtein" type="number" inputmode="numeric"></label>
+        <label>Carbs (g)<input id="dCarbs" type="number" inputmode="numeric"></label>
+        <label>Fiber (g)<input id="dFiber" type="number" inputmode="numeric"></label>
+        <label>Steps<input id="dSteps" type="number" inputmode="numeric"></label>
+        <label>Sleep (hours)<input id="dSleep" type="number" step=".1" inputmode="decimal"></label>
+        <label>Hunger (1–5)<input id="dHunger" type="number" min="1" max="5"></label>
+        <label>Energy (1–5)<input id="dEnergy" type="number" min="1" max="5"></label>
+        <label>Sodium (mg)<input id="dSodium" type="number" inputmode="numeric"></label>
+        <label>Water (L)<input id="dWater" type="number" step=".1" inputmode="decimal"></label>
+        <label>Training<input id="dTraining" placeholder="Push / Pull / Legs / Rest"></label>
+        <label>Cycle day<input id="dCycle" type="number" min="1"></label>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="saveDay()">Save day</button>
+        <button class="btn ghost" onclick="markPeriod()">Mark period start</button>
+      </div>
+    </div>
+    <div class="section-title"><h2>Recent entries</h2></div>
+    <div class="card tablewrap"><table><thead><tr><th>Date</th><th>Wt</th><th>Cal</th><th>Protein</th><th>Fiber</th><th>Sleep</th></tr></thead><tbody id="dailyTable"></tbody></table></div>
+  </section>
+
+  <section id="strength" class="screen">
+    <div class="section-title"><h2>Strength</h2><span>performance guardrail</span></div>
+    <div class="card">
+      <div class="form two">
+        <label>Date<input id="sDate" type="date"></label>
+        <label>Lift<input id="sLift" placeholder="Lat pulldown"></label>
+        <label>Weight (lb)<input id="sWeight" type="number" step=".5" inputmode="decimal"></label>
+        <label>Reps<input id="sReps" type="number" inputmode="numeric"></label>
+      </div>
+      <button class="btn" style="margin-top:12px" onclick="saveLift()">Add set</button>
+      <div class="note" style="margin-top:8px">e1RM uses Epley: weight × (1 + reps/30).</div>
+    </div>
+    <div class="section-title"><h2>Key lift trend</h2><span><select id="liftSelect" onchange="renderStrength()"></select></span></div>
+    <div class="card"><div class="chart"><svg id="strengthChart"></svg></div></div>
+    <div class="section-title"><h2>Latest sets</h2></div>
+    <div class="card tablewrap"><table><thead><tr><th>Date</th><th>Lift</th><th>Wt</th><th>Reps</th><th>e1RM</th></tr></thead><tbody id="liftTable"></tbody></table></div>
+  </section>
+
+  <section id="insights" class="screen">
+    <div class="section-title"><h2>Insights</h2><span>decision engine</span></div>
+    <div class="card"><div class="label">Recommended calorie action</div><div class="metric" id="actionMetric">Hold</div><div class="insight" id="actionInsight">Log at least 14 days before changing calories based on the model.</div></div>
+    <div class="section-title"><h2>Scale-noise decoder</h2></div>
+    <div class="card"><div id="noiseInsights" class="note">Not enough data yet.</div></div>
+    <div class="section-title"><h2>Satiety model</h2></div>
+    <div class="card"><div id="satietyInsights" class="note">Not enough data yet.</div></div>
+  </section>
+
+  <section id="more" class="screen">
+    <div class="section-title"><h2>More</h2></div>
+    <div class="moregrid">
+      <button onclick="openSub('settings')">Settings<span>targets, cycle assumptions</span></button>
+      <button onclick="openSub('import')">Import<span>MyFitnessPal-style CSV</span></button>
+      <button onclick="openSub('backup')">Backup<span>export your local data</span></button>
+      <button onclick="seedDemo()">Demo data<span>preview 6 weeks of history</span></button>
+    </div>
+
+    <div id="settings" style="display:none;margin-top:14px" class="card">
+      <div class="form two">
+        <label>Calories<input id="setCalories" type="number"></label>
+        <label>Protein (g)<input id="setProtein" type="number"></label>
+        <label>Fiber (g)<input id="setFiber" type="number"></label>
+        <label>Carbs (g)<input id="setCarbs" type="number"></label>
+        <label>Goal loss/wk (lb)<input id="setLoss" type="number" step=".1"></label>
+        <label>Cycle length<input id="setCycle" type="number"></label>
+        <label>Luteal length<input id="setLuteal" type="number"></label>
+      </div>
+      <button class="btn" style="margin-top:12px" onclick="saveSettings()">Save settings</button>
+    </div>
+
+    <div id="import" style="display:none;margin-top:14px" class="card">
+      <label>Paste CSV<textarea id="csvText" placeholder="Date,Calories,Protein,Carbs,Fiber,Weight"></textarea></label>
+      <button class="btn secondary" style="margin-top:12px" onclick="importCSV()">Import CSV</button>
+      <div class="note" style="margin-top:8px">Review imported entries afterward. CSV formats vary.</div>
+    </div>
+
+    <div id="backup" style="display:none;margin-top:14px" class="card">
+      <button class="btn" onclick="exportData()">Export JSON backup</button>
+      <div class="note" style="margin-top:8px">Data is stored only in this browser unless you export it.</div>
+    </div>
+  </section>
+</main>
+</div>
+
+<nav class="bottom">
+  <button class="active" data-screen="home"><span class="navicon">⌂</span>Home</button>
+  <button data-screen="log"><span class="navicon">＋</span>Log</button>
+  <button data-screen="strength"><span class="navicon">↗</span>Strength</button>
+  <button data-screen="insights"><span class="navicon">◎</span>Insights</button>
+  <button data-screen="more"><span class="navicon">•••</span>More</button>
+</nav>
+
+<script>
+const K='chudTrackerPWA_v1';
+let state=JSON.parse(localStorage.getItem(K)||'null')||{
+ settings:{calories:1700,protein:140,fiber:30,carbs:185,loss:.5,cycle:28,luteal:14},
+ days:[],lifts:[],periodStarts:[]
+};
+const $=id=>document.getElementById(id), mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null, sum=a=>a.reduce((x,y)=>x+y,0), clamp=(x,a,b)=>Math.max(a,Math.min(b,x)), fmt=(x,d=0)=>x==null||!isFinite(x)?'—':Number(x).toFixed(d), num=v=>v===''?null:Number(v);
+const byDate=(a,b)=>new Date(a.date)-new Date(b.date), daysSorted=()=>[...state.days].sort(byDate);
+const save=()=>{localStorage.setItem(K,JSON.stringify(state));renderAll()};
+
+document.querySelectorAll('nav.bottom button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('nav.bottom button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+ document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));$(b.dataset.screen).classList.add('active');
+ window.scrollTo({top:0,behavior:'smooth'});
+ if(b.dataset.screen==='strength')renderStrength();
+});
+
+function openSub(id){['settings','import','backup'].forEach(x=>$(x).style.display=x===id?'block':'none')}
+function inferCycleDay(date){const starts=state.periodStarts.map(x=>new Date(x)).filter(x=>x<=new Date(date)).sort((a,b)=>b-a);if(!starts.length)return null;return Math.floor((new Date(date)-starts[0])/86400000)+1}
+function phaseForDay(cd){if(!cd)return'—';const ov=Math.max(8,state.settings.cycle-state.settings.luteal);if(cd<=5)return'Menstrual';if(cd<ov-1)return'Follicular';if(cd<=ov+1)return'Ovulation';return'Luteal'}
+function movingAvg(d,k,n=7){return d.map((x,i)=>{const a=d.slice(Math.max(0,i-n+1),i+1).map(z=>z[k]).filter(z=>z!=null);return a.length?mean(a):null})}
+function linearSlope(vals){const p=vals.map((y,i)=>({x:i,y})).filter(o=>o.y!=null);if(p.length<2)return null;const mx=mean(p.map(o=>o.x)),my=mean(p.map(o=>o.y)),den=sum(p.map(o=>(o.x-mx)**2));return den?sum(p.map(o=>(o.x-mx)*(o.y-my)))/den:null}
+function corr(a,b){const p=a.map((x,i)=>[x,b[i]]).filter(v=>v[0]!=null&&v[1]!=null&&isFinite(v[0])&&isFinite(v[1]));if(p.length<5)return{r:null,n:p.length};const ax=p.map(v=>v[0]),ay=p.map(v=>v[1]),mx=mean(ax),my=mean(ay),den=Math.sqrt(sum(ax.map(x=>(x-mx)**2))*sum(ay.map(y=>(y-my)**2)));return{r:den?sum(p.map(([x,y])=>(x-mx)*(y-my)))/den:null,n:p.length}}
+function adaptiveTDEE(){const d=daysSorted().filter(x=>x.weight!=null&&x.calories!=null);if(d.length<7)return{value:null,weekly:null};const s=d.slice(-Math.min(28,d.length)),avg=mean(s.map(x=>x.calories)),sl=linearSlope(s.map(x=>x.weight));return{value:clamp(avg-sl*3500,1100,3500),weekly:sl*7}}
+function bestLiftByDay(){const m={};state.lifts.forEach(x=>{const e=x.weight*(1+x.reps/30),k=x.date+'|'+x.lift.toLowerCase();if(!m[k]||e>m[k].e)m[k]={...x,e}});return Object.values(m).sort(byDate)}
+function strengthMomentum(){const b=bestLiftByDay(),names=[...new Set(b.map(x=>x.lift.toLowerCase()))],sl=[];names.forEach(n=>{const s=b.filter(x=>x.lift.toLowerCase()===n).slice(-8);if(s.length>=3){const q=linearSlope(s.map(x=>x.e));if(q!=null)sl.push(q*7)}});return sl.length?mean(sl):null}
+function renderLine(id,a,b=null){const svg=$(id);svg.innerHTML='';const all=[...a,...(b||[])].filter(x=>x!=null);if(all.length<2){svg.innerHTML='<text x="14" y="34" fill="#728078" font-size="12">Not enough data yet.</text>';return}const W=760,H=210,p=22,min=Math.min(...all),max=Math.max(...all),rng=max-min||1,x=i=>p+(W-2*p)*(i/Math.max(1,Math.max(a.length,(b||[]).length)-1)),y=v=>H-p-(H-2*p)*((v-min)/rng),path=s=>s.map((v,i)=>v==null?null:`${i?'L':'M'} ${x(i)} ${y(v)}`).filter(Boolean).join(' ');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);[0,.5,1].forEach(t=>svg.innerHTML+=`<line class="axis" x1="${p}" x2="${W-p}" y1="${p+t*(H-2*p)}" y2="${p+t*(H-2*p)}"/>`);svg.innerHTML+=`<path class="line" d="${path(a)}"/>`;if(b)svg.innerHTML+=`<path class="line2" d="${path(b)}"/>`}
+function renderHome(){const d=daysSorted(),trend=movingAvg(d,'weight',7),lt=[...trend].reverse().find(x=>x!=null),t=adaptiveTDEE(),avg=mean(d.slice(-28).map(x=>x.calories).filter(x=>x!=null)),def=t.value&&avg?t.value-avg:null,sm=strengthMomentum();$('trendWeight').textContent=lt==null?'—':fmt(lt,1)+' lb';const sl=linearSlope(trend.slice(-14));$('trendDelta').textContent=sl==null?'7-day smoothed':`${sl<0?'↓':'↑'} ${fmt(Math.abs(sl*7),2)} lb/week`;$('adaptiveTdee').textContent=t.value?fmt(t.value)+' kcal':'—';$('deficit').textContent=def==null?'—':fmt(def)+' kcal';$('strengthMomentum').textContent=sm==null?'—':`${sm>=0?'+':''}${fmt(sm,1)} lb/wk`;renderLine('weightChart',d.map(x=>x.weight),trend);const phase=d.length?phaseForDay(d[d.length-1].cycleDay||inferCycleDay(d[d.length-1].date)):'—';$('phasePill').textContent='Cycle: '+phase;const n=d.filter(x=>x.weight!=null&&x.calories!=null).length;let h='Your body is a trend, not a datapoint.',p='Log consistently and The Chud Tracker will tell you whether to hold, cut, eat more, or simply ignore scale noise.';if(n>=14&&t.weekly!=null){if(t.weekly<-0.9){h='Your deficit may be more aggressive than necessary.';p='If hunger, energy or strength are deteriorating, add food before adding more cardio.'}else if(t.weekly<=-.1){h='The current plan is producing a usable fat-loss signal.';p='Hold calories unless strength or recovery deteriorates. Stability makes the model smarter.'}else{h='Your trend is close to maintenance right now.';p='If strength is improving, holding can still support recomp. If not, wait for another week before making a small change.'}}$('headline').textContent=h;$('narrative').textContent=p}
+function renderDaily(){$('dailyTable').innerHTML=daysSorted().slice(-12).reverse().map(x=>`<tr><td>${x.date}</td><td>${fmt(x.weight,1)}</td><td>${fmt(x.calories)}</td><td>${fmt(x.protein)}</td><td>${fmt(x.fiber)}</td><td>${fmt(x.sleep,1)}</td></tr>`).join('')}
+function saveDay(){const d={date:$('dDate').value,weight:num($('dWeight').value),calories:num($('dCalories').value),protein:num($('dProtein').value),carbs:num($('dCarbs').value),fiber:num($('dFiber').value),steps:num($('dSteps').value),sleep:num($('dSleep').value),hunger:num($('dHunger').value),energy:num($('dEnergy').value),sodium:num($('dSodium').value),water:num($('dWater').value),training:$('dTraining').value,cycleDay:num($('dCycle').value)};if(!d.date)return alert('Choose a date.');const i=state.days.findIndex(x=>x.date===d.date);if(i>=0)state.days[i]={...state.days[i],...d};else state.days.push(d);save()}
+function markPeriod(){const date=$('dDate').value||new Date().toISOString().slice(0,10);if(!state.periodStarts.includes(date))state.periodStarts.push(date);$('dCycle').value=1;save()}
+function saveLift(){const x={date:$('sDate').value,lift:$('sLift').value.trim(),weight:num($('sWeight').value),reps:num($('sReps').value)};if(!x.date||!x.lift||!x.weight||!x.reps)return alert('Complete all lift fields.');state.lifts.push(x);save()}
+function renderStrength(){const b=bestLiftByDay(),names=[...new Set(b.map(x=>x.lift))],cur=$('liftSelect').value;$('liftSelect').innerHTML=names.map(n=>`<option>${n}</option>`).join('');if(names.includes(cur))$('liftSelect').value=cur;const name=$('liftSelect').value||names[0],s=b.filter(x=>x.lift===name);renderLine('strengthChart',s.map(x=>x.e));$('liftTable').innerHTML=[...state.lifts].sort(byDate).slice(-12).reverse().map(x=>`<tr><td>${x.date}</td><td>${x.lift}</td><td>${x.weight}</td><td>${x.reps}</td><td>${fmt(x.weight*(1+x.reps/30),1)}</td></tr>`).join('')}
+function renderInsights(){const d=daysSorted(),trend=movingAvg(d,'weight',7),nextNoise=d.map((x,i)=>i<d.length-1&&d[i+1].weight!=null&&trend[i+1]!=null?d[i+1].weight-trend[i+1]:null),sodium=d.map(x=>x.sodium),carbs=d.map(x=>x.carbs),fiber=d.map(x=>x.fiber),protein=d.map(x=>x.protein),sleep=d.map(x=>x.sleep),hunger=d.map(x=>x.hunger),cal=d.map(x=>x.calories);const ns=[['Sodium → next-day scale noise',corr(sodium,nextNoise)],['Carbs → next-day scale noise',corr(carbs,nextNoise)]];$('noiseInsights').innerHTML=ns.map(([q,o])=>o.r==null?`${q}: need more data.`:`<b>${q}</b>: r=${fmt(o.r,2)} (n=${o.n})`).join('<br><br>');const ss=[['Fiber vs hunger',corr(fiber,hunger)],['Protein vs hunger',corr(protein,hunger)],['Sleep vs hunger',corr(sleep,hunger)],['Calories vs hunger',corr(cal,hunger)]];$('satietyInsights').innerHTML=ss.map(([q,o])=>o.r==null?`${q}: need more data.`:`<b>${q}</b>: r=${fmt(o.r,2)} (n=${o.n})`).join('<br><br>');const t=adaptiveTDEE(),sm=strengthMomentum();let action='Hold',ins='Log at least 14 days before changing calories based on the model.';if(d.filter(x=>x.weight!=null&&x.calories!=null).length>=14&&t.weekly!=null){if(t.weekly>-0.05&&sm!=null&&sm<=0){action='-100 kcal';ins='Weight is roughly flat and strength is not improving. A small reduction is more defensible than a large cut.'}else if(t.weekly<-0.9||(sm!=null&&sm<-1.5)){action='+100 kcal';ins='Loss or performance signals suggest the deficit may be too aggressive.'}else{action='Hold';ins='Current data does not justify a calorie change.'}}$('actionMetric').textContent=action;$('actionInsight').textContent=ins}
+function saveSettings(){state.settings={calories:num($('setCalories').value),protein:num($('setProtein').value),fiber:num($('setFiber').value),carbs:num($('setCarbs').value),loss:num($('setLoss').value),cycle:num($('setCycle').value),luteal:num($('setLuteal').value)};save()}
+function loadSettings(){for(const [id,key] of [['setCalories','calories'],['setProtein','protein'],['setFiber','fiber'],['setCarbs','carbs'],['setLoss','loss'],['setCycle','cycle'],['setLuteal','luteal']])$(id).value=state.settings[key]}
+function csvParse(text){const lines=text.trim().split(/\r?\n/),heads=lines[0].split(',').map(x=>x.trim().toLowerCase());return{heads,rows:lines.slice(1).map(l=>l.split(','))}}
+function importCSV(){const text=$('csvText').value;if(!text.trim())return alert('Paste CSV first.');const {heads,rows}=csvParse(text),find=(...ks)=>heads.findIndex(h=>ks.some(k=>h.includes(k))),idx={date:find('date'),calories:find('calories'),protein:find('protein'),carbs:find('carbohydrate','carbs'),fiber:find('fiber'),weight:find('weight')};let count=0;rows.forEach(r=>{if(idx.date<0||!r[idx.date])return;const dt=new Date(r[idx.date]);if(isNaN(dt))return;const ds=dt.toISOString().slice(0,10),o={date:ds};for(const [k,i] of Object.entries(idx))if(k!=='date'&&i>=0&&r[i]!==''&&!isNaN(Number(r[i])))o[k]=Number(r[i]);const j=state.days.findIndex(x=>x.date===ds);if(j>=0)state.days[j]={...state.days[j],...o};else state.days.push(o);count++});save();alert(`Imported ${count} rows.`)}
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='the-chud-tracker-backup.json';a.click();URL.revokeObjectURL(a.href)}
+function seedDemo(){if(!confirm('Replace current data with demo data?'))return;state={settings:{calories:1700,protein:140,fiber:30,carbs:185,loss:.5,cycle:28,luteal:14},days:[],lifts:[],periodStarts:[]};const start=new Date();start.setDate(start.getDate()-41);let wt=146.2;for(let i=0;i<42;i++){const dt=new Date(start);dt.setDate(start.getDate()+i);const date=dt.toISOString().slice(0,10),cycle=i%28+1;wt+=-.045+(Math.random()-.5)*.28+(cycle>=20?.04:0);state.days.push({date,weight:+wt.toFixed(1),calories:Math.round(1700+(Math.random()-.5)*180),protein:Math.round(142+(Math.random()-.5)*18),carbs:Math.round(185+(Math.random()-.5)*35),fiber:Math.round(30+(Math.random()-.5)*8),steps:Math.round(9000+(Math.random()-.5)*4500),sleep:+(7.2+(Math.random()-.5)*1.4).toFixed(1),hunger:Math.round(3+(Math.random()-.5)*2),energy:Math.round(3+(Math.random()-.5)*2),sodium:Math.round(2200+(Math.random()-.5)*850),water:2.2,training:['Push','Pull','Legs','Rest'][i%4],cycleDay:cycle})}state.periodStarts=[state.days[0].date,state.days[28].date];['Lat Pulldown','DB Bench Press','Romanian Deadlift'].forEach((lift,j)=>{for(let i=0;i<6;i++)state.lifts.push({date:state.days[i*7+j].date,lift,weight:[80,30,95][j]+i*[2.5,2.5,5][j],reps:8+i%2})});save()}
+function renderAll(){renderHome();renderDaily();renderStrength();renderInsights();loadSettings()}
+const today=new Date().toISOString().slice(0,10);$('dDate').value=today;$('sDate').value=today;renderAll();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+</script>
+</body>
+</html>
