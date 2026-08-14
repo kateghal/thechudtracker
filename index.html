@@ -81,7 +81,7 @@
     <div class="hero">
       <h2 id="headline">Loading today’s insult…</h2>
       <p id="narrative">The Chud Tracker is checking whether you got stronger or just developed opinions about creatine.</p>
-      <span class="roasttag">Chud Coach · v14</span>
+      <span class="roasttag">Chud Coach · v15</span>
     </div>
 
     <div class="section-title"><h2>Weekly review</h2><span>decision, not noise</span></div>
@@ -129,17 +129,20 @@
         <label>Fiber (g)<input id="dFiber" type="number" inputmode="numeric"></label>
         <label>Steps<input id="dSteps" type="number" inputmode="numeric"></label>
         <label>Sleep (hours)<input id="dSleep" type="number" step=".1" inputmode="decimal"></label>
-        <label>Hunger (1–5)
-          <div class="sliderbox"><input id="dHunger" type="range" min="1" max="5" step="1" value="3" oninput="syncSlider('dHunger','dHungerVal')"><span class="sliderval" id="dHungerVal">3</span></div>
+        <label>Hunger / diet difficulty
+          <select id="dHunger">
+            <option value="">Not logged</option>
+            <option value="normal">Normal</option>
+            <option value="hungry">Noticeably hungry</option>
+            <option value="very_hungry">Very hungry / affected behavior</option>
+          </select>
         </label>
-        <label>Energy (1–5)
-          <div class="sliderbox"><input id="dEnergy" type="range" min="1" max="5" step="1" value="3" oninput="syncSlider('dEnergy','dEnergyVal')"><span class="sliderval" id="dEnergyVal">3</span></div>
-        </label>
-        <label>Stress (1–5)
-          <div class="sliderbox"><input id="dStress" type="range" min="1" max="5" step="1" value="3" oninput="syncSlider('dStress','dStressVal')"><span class="sliderval" id="dStressVal">3</span></div>
-        </label>
-        <label>Recovery (1–5)
-          <div class="sliderbox"><input id="dRecovery" type="range" min="1" max="5" step="1" value="3" oninput="syncSlider('dRecovery','dRecoveryVal')"><span class="sliderval" id="dRecoveryVal">3</span></div>
+        <label>Cravings / unplanned eating?
+          <select id="dCravings">
+            <option value="">Not logged</option>
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
         </label>
         <label>Sodium (mg)<input id="dSodium" type="number" inputmode="numeric"></label>
         <label>Water (liters)<input id="dWater" type="number" step=".1" inputmode="decimal"></label>
@@ -148,6 +151,17 @@
         <label>Cardio type<input id="dCardioType" placeholder="Incline walk / run / bike"></label>
         <label>Training<input id="dTraining" placeholder="Push / Pull / Legs / Rest"></label>
         <label>Waist (in, optional)<input id="dWaist" type="number" step=".1" inputmode="decimal" placeholder="Weekly is enough"></label>
+        <label>Context tags
+          <select id="dTag" multiple size="4">
+            <option value="high_stress">High stress</option>
+            <option value="travel">Travel</option>
+            <option value="sick">Sick</option>
+            <option value="restaurant">Restaurant / unusual meal</option>
+            <option value="poor_sleep">Poor sleep</option>
+            <option value="other">Other unusual day</option>
+          </select>
+        </label>
+        <label>Daily notes<textarea id="dNotes" placeholder="Optional context: terrible workday, drinks with friends, felt unusually hungry, etc."></textarea></label>
         <label class="cycleOnly">Cycle day<input id="dCycle" type="number" min="1"></label>
       </div>
       <div class="actions" style="grid-template-columns:1fr">
@@ -194,7 +208,7 @@
     <div class="section-title"><h2>What makes my weight spike?</h2><span>next-day scale noise</span></div>
     <div id="noiseCards" class="insightcards"></div>
 
-    <div class="section-title"><h2>What helps my workouts?</h2><span>recovery + performance</span></div>
+    <div class="section-title"><h2>What helps my workouts?</h2><span>objective performance signals</span></div>
     <div id="performanceCards" class="insightcards"></div>
 
     <div class="section-title"><h2>Am I actually recomping?</h2></div>
@@ -447,8 +461,7 @@ function syncSlider(inputId,valueId){
  if(el&&out)out.textContent=el.value;
 }
 function syncAllSliders(){
- [['dHunger','dHungerVal'],['dEnergy','dEnergyVal'],['dStress','dStressVal'],['dRecovery','dRecoveryVal'],['sRPE','sRPEVal'],['sRIR','sRIRVal']]
-   .forEach(([a,b])=>syncSlider(a,b));
+ [['sRPE','sRPEVal'],['sRIR','sRIRVal']].forEach(([a,b])=>syncSlider(a,b));
 }
 function shortDate(ds){
  if(!ds)return'';
@@ -622,7 +635,6 @@ function dataDrivenRoast(){
  if(lifts.length>=10&&sm!=null&&Math.abs(sm)<.25)return chooseContextRoast('stagnantStrength');
  if(latest.calories!=null&&state.settings.calories&&latest.calories>state.settings.calories+350)return chooseContextRoast('highCalories',[latest.calories,state.settings.calories]);
  if(latest.fiber!=null&&state.settings.fiber&&latest.fiber<state.settings.fiber*.55)return chooseContextRoast('lowFiber',[latest.fiber]);
- if(latest.recovery!=null&&latest.recovery<=2&&latest.sleep!=null&&latest.sleep<7)return chooseContextRoast('poorRecovery');
 
  if(lifts.length>=8){
    const counts={};lifts.forEach(x=>counts[x.lift]=(counts[x.lift]||0)+1);
@@ -701,9 +713,14 @@ function editDay(date){
  const x=state.days.find(d=>d.date===date);if(!x)return;
  const set=(id,v)=>{if($(id))$(id).value=v??''};
  set('dDate',x.date);set('dWeight',x.weight);set('dCalories',x.calories);set('dProtein',x.protein);set('dCarbs',x.carbs);set('dFiber',x.fiber);
- set('dSteps',x.steps);set('dSleep',x.sleep);set('dHunger',x.hunger);set('dEnergy',x.energy);set('dStress',x.stress);set('dRecovery',x.recovery);
- set('dSodium',x.sodium);set('dWater',x.water);set('dAlcohol',x.alcohol);set('dCardio',x.cardio);set('dCardioType',x.cardioType);set('dTraining',x.training);set('dWaist',x.waist);set('dCycle',x.cycleDay);
- syncAllSliders();$('saveDayBtn').textContent='Update day';$('deleteDayBtn').style.display='block';
+ set('dSteps',x.steps);set('dSleep',x.sleep);set('dHunger',x.hunger);set('dCravings',x.cravings);
+ set('dSodium',x.sodium);set('dWater',x.water);set('dAlcohol',x.alcohol);set('dCardio',x.cardio);set('dCardioType',x.cardioType);
+ set('dTraining',x.training);set('dWaist',x.waist);set('dNotes',x.notes);set('dCycle',x.cycleDay);
+ if($('dTag')){
+   const vals=new Set(x.tags||[]);
+   [...$('dTag').options].forEach(o=>o.selected=vals.has(o.value));
+ }
+ $('saveDayBtn').textContent='Update day';$('deleteDayBtn').style.display='block';
  document.querySelector('nav.bottom button[data-screen="log"]').click();
  window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -713,12 +730,14 @@ function deleteDay(date){
  save();
 }
 function saveDay(){
+ const selectedTags=$('dTag')?[...$('dTag').selectedOptions].map(o=>o.value):[];
  const d={
    date:$('dDate').value,weight:num($('dWeight').value),calories:num($('dCalories').value),protein:num($('dProtein').value),
    carbs:num($('dCarbs').value),fiber:num($('dFiber').value),steps:num($('dSteps').value),sleep:num($('dSleep').value),
-   hunger:num($('dHunger').value),energy:num($('dEnergy').value),stress:num($('dStress').value),recovery:num($('dRecovery').value),
-   sodium:num($('dSodium').value),water:num($('dWater').value),alcohol:num($('dAlcohol').value),cardio:num($('dCardio').value),cardioType:$('dCardioType').value,
-   training:$('dTraining').value,waist:num($('dWaist').value),cycleDay:state.settings.cycleEnabled?num($('dCycle').value):null
+   hunger:$('dHunger').value||null,cravings:$('dCravings').value===''?null:Number($('dCravings').value),
+   sodium:num($('dSodium').value),water:num($('dWater').value),alcohol:num($('dAlcohol').value),cardio:num($('dCardio').value),
+   cardioType:$('dCardioType').value,training:$('dTraining').value,waist:num($('dWaist').value),
+   tags:selectedTags,notes:$('dNotes').value.trim(),cycleDay:state.settings.cycleEnabled?num($('dCycle').value):null
  };
  if(!d.date)return alert('Choose a date.');
  const i=state.days.findIndex(x=>x.date===d.date);
@@ -804,19 +823,26 @@ function renderInsights(){
  try{
    const d=daysSorted(),trend=movingAvg(d,'weight',7);
    const nextNoise=d.map((x,i)=>i<d.length-1&&d[i+1].weight!=null&&trend[i+1]!=null?d[i+1].weight-trend[i+1]:null);
-   const fiber=d.map(x=>x.fiber),protein=d.map(x=>x.protein),sleep=d.map(x=>x.sleep),hunger=d.map(x=>x.hunger),
-         sodium=d.map(x=>x.sodium),carbs=d.map(x=>x.carbs),stress=d.map(x=>x.stress),recovery=d.map(x=>x.recovery),
-         cardio=d.map(x=>x.cardio),alcohol=d.map(x=>x.alcohol);
+   const fiber=d.map(x=>x.fiber),protein=d.map(x=>x.protein),sleep=d.map(x=>x.sleep),sodium=d.map(x=>x.sodium),carbs=d.map(x=>x.carbs),
+         cardio=d.map(x=>x.cardio),alcohol=d.map(x=>x.alcohol),cravings=d.map(x=>x.cravings);
+   const hungerNumeric=d.map(x=>x.hunger==='normal'?0:x.hunger==='hungry'?1:x.hunger==='very_hungry'?2:null);
 
-   const safeCard=(q,xl,yl,xv,yv,dir)=> {
+   const bestSets=bestLiftByDay();
+   const nextDayStrength=d.map((x,i)=>{
+     if(i>=d.length-1)return null;
+     const dt=d[i+1].date,sets=bestSets.filter(v=>v.date===dt);
+     return sets.length?mean(sets.map(v=>v.e)):null;
+   });
+
+   const safeCard=(q,xl,yl,xv,yv,dir)=>{
      try{return insightCard(q,xl,yl,xv,yv,dir)}
      catch(e){return `<div class="insightcard"><div class="q">${q}</div><div class="answer">Keep logging — this relationship is not ready yet.</div></div>`}
    };
 
    $('hungerCards').innerHTML=
-     safeCard('Does more fiber reduce my hunger?','Fiber (g)','Hunger (1–5)',fiber,hunger,-1)+
-     safeCard('Does better sleep reduce my hunger?','Sleep (hr)','Hunger (1–5)',sleep,hunger,-1)+
-     safeCard('Does protein change my hunger?','Protein (g)','Hunger (1–5)',protein,hunger,-1);
+     safeCard('Does more fiber reduce high-hunger days?','Fiber (g)','Hunger category',fiber,hungerNumeric,-1)+
+     safeCard('Does better sleep reduce cravings?','Sleep (hr)','Cravings yes/no',sleep,cravings,-1)+
+     safeCard('Does protein reduce high-hunger days?','Protein (g)','Hunger category',protein,hungerNumeric,-1);
 
    $('noiseCards').innerHTML=
      safeCard('Does sodium predict a next-day weight spike?','Sodium (mg)','Scale noise (lb)',sodium,nextNoise,1)+
@@ -824,27 +850,19 @@ function renderInsights(){
      safeCard('Does alcohol move the scale the next morning?','Standard drinks','Scale noise (lb)',alcohol,nextNoise,1);
 
    $('performanceCards').innerHTML=
-     safeCard('Does sleep improve next-day energy?','Sleep (hr)','Next-day energy',sleep,d.map((x,i)=>i<d.length-1?d[i+1].energy:null),1)+
-     safeCard('Does stress hurt recovery?','Stress (1–5)','Recovery (1–5)',stress,recovery,-1)+
-     safeCard('Does cardio volume affect recovery?','Cardio (min)','Recovery (1–5)',cardio,recovery,-1)+
-     safeCard('Does alcohol hurt next-day recovery?','Standard drinks','Next-day recovery',alcohol,d.map((x,i)=>i<d.length-1?d[i+1].recovery:null),-1);
+     safeCard('Does sleep predict better next-day lifting performance?','Sleep (hr)','Next-day estimated 1RM',sleep,nextDayStrength,1)+
+     safeCard('Does alcohol predict worse next-day lifting performance?','Standard drinks','Next-day estimated 1RM',alcohol,nextDayStrength,-1)+
+     safeCard('Does cardio volume affect next-day lifting performance?','Cardio (min)','Next-day estimated 1RM',cardio,nextDayStrength,-1);
 
-   const t=adaptiveTDEE(),sm=strengthScore?strengthScore():strengthMomentum();
+   const t=adaptiveTDEE(),sm=typeof strengthScore==='function'?strengthScore():strengthMomentum();
    const goalLoss=Math.abs(state.settings.loss||0),goalDef=goalLoss?goalLoss*3500/7:null;
    const currentDef=t.value&&t.avgCalories!=null?t.value-t.avgCalories:null;
    let action='Hold',ins='Log at least 14–21 days before changing calories based on the model.';
    if(t.value&&t.confidence>=50&&goalDef!=null&&currentDef!=null){
      const gap=currentDef-goalDef;
-     if(gap>175||(sm!=null&&sm<-1.5)){
-       action='+100 kcal';
-       ins=`Your inferred deficit (~${fmt(currentDef)} kcal/day) is larger than the ~${fmt(goalDef)} kcal/day implied by your goal, or performance is weakening.`;
-     }else if(gap<-175&&t.weekly>-0.05){
-       action='-100 kcal';
-       ins=`Your inferred deficit (~${fmt(currentDef)} kcal/day) is smaller than the ~${fmt(goalDef)} kcal/day implied by your goal, and weight is not trending down.`;
-     }else{
-       action='Hold';
-       ins=`Your inferred deficit (~${fmt(currentDef)} kcal/day) is reasonably close to the ~${fmt(goalDef)} kcal/day implied by your goal.`;
-     }
+     if(gap>175||(sm!=null&&sm<-1.5)){action='+100 kcal';ins=`Your inferred deficit (~${fmt(currentDef)} kcal/day) is larger than the ~${fmt(goalDef)} kcal/day implied by your goal, or performance is weakening.`}
+     else if(gap<-175&&t.weekly>-0.05){action='-100 kcal';ins=`Your inferred deficit (~${fmt(currentDef)} kcal/day) is smaller than the ~${fmt(goalDef)} kcal/day implied by your goal, and weight is not trending down.`}
+     else{action='Hold';ins=`Your inferred deficit (~${fmt(currentDef)} kcal/day) is reasonably close to the ~${fmt(goalDef)} kcal/day implied by your goal.`}
    }else if(t.value&&t.confidence<50){
      ins=`Maintenance is still low-confidence (${t.confidence}%). Keep calories stable and collect more data.`;
    }
@@ -861,7 +879,7 @@ function renderInsights(){
      if(waistSlope<0&&sm>=0){read='Strong recomp';note='Waist is trending down while strength is holding or improving.'}
      else if(wtSlope<0&&sm>=0){read='Good cut';note='Weight is falling while strength is holding.'}
      else if(wtSlope>=0&&waistSlope<0&&sm>0){read='Possible recomp';note='Scale weight is flat/up, but waist is down and strength is up.'}
-     else if(sm<0&&wtSlope<0){read='Watch recovery';note='Weight and strength are both falling. Review deficit size and recovery.'}
+     else if(sm<0&&wtSlope<0){read='Watch recovery';note='Weight and strength are both falling. Review deficit size, sleep and training load.'}
      else{read='Mixed signal';note='Keep the plan stable and collect another 1–2 weeks.'}
    }
    $('recompRead').textContent=read;$('recompNote').textContent=note;
@@ -870,7 +888,10 @@ function renderInsights(){
      const rows=d.map((x,i)=>({...x,phase:phaseForDay(x.cycleDay||inferCycleDay(x.date)),noise:x.weight!=null&&trend[i]!=null?x.weight-trend[i]:null}))
        .filter(x=>x.phase!=='—'&&x.noise!=null);
      const phases=['Menstrual','Follicular','Ovulation','Luteal'].map(p=>({p,a:rows.filter(x=>x.phase===p)})).filter(x=>x.a.length>=3);
-     $('cycleInsight').innerHTML=phases.length?phases.map(x=>`<b>${x.p}</b>: scale noise ${fmt(mean(x.a.map(v=>v.noise)),2)} lb; hunger ${fmt(mean(x.a.map(v=>v.hunger).filter(v=>v!=null)),1)}/5 (${x.a.length} days)`).join('<br><br>'):'Log a few days in each phase to build your personal pattern.';
+     $('cycleInsight').innerHTML=phases.length?phases.map(x=>{
+       const highH=x.a.filter(v=>v.hunger==='hungry'||v.hunger==='very_hungry').length;
+       return `<b>${x.p}</b>: scale noise ${fmt(mean(x.a.map(v=>v.noise)),2)} lb; high-hunger days ${highH}/${x.a.length}`;
+     }).join('<br><br>'):'Log a few days in each phase to build your personal pattern.';
    }
  }catch(e){
    console.error('Learned tab render failed',e);
@@ -906,7 +927,7 @@ function loadSettings(){
 function csvParse(text){const lines=text.trim().split(/\r?\n/),heads=lines[0].split(',').map(x=>x.trim().toLowerCase());return{heads,rows:lines.slice(1).map(l=>l.split(','))}}
 function importCSV(){const text=$('csvText').value;if(!text.trim())return alert('Paste CSV first.');const {heads,rows}=csvParse(text),find=(...ks)=>heads.findIndex(h=>ks.some(k=>h.includes(k))),idx={date:find('date'),calories:find('calories'),protein:find('protein'),carbs:find('carbohydrate','carbs'),fiber:find('fiber'),weight:find('weight')};let count=0;rows.forEach(r=>{if(idx.date<0||!r[idx.date])return;const dt=new Date(r[idx.date]);if(isNaN(dt))return;const ds=dt.toISOString().slice(0,10),o={date:ds};for(const [k,i] of Object.entries(idx))if(k!=='date'&&i>=0&&r[i]!==''&&!isNaN(Number(r[i])))o[k]=Number(r[i]);const j=state.days.findIndex(x=>x.date===ds);if(j>=0)state.days[j]={...state.days[j],...o};else state.days.push(o);count++});save();alert(`Imported ${count} rows.`)}
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='the-chud-tracker-backup.json';a.click();URL.revokeObjectURL(a.href)}
-function seedDemo(){if(!confirm('Replace current data with demo data?'))return;state={settings:{calories:1700,protein:140,fiber:30,carbs:185,loss:.5,cycle:28,luteal:14,cycleEnabled:true,roastEnabled:true},profile:{age:25,sex:'female',heightFt:5,heightIn:8,weight:146,activity:1.55},days:[],lifts:[],periodStarts:[]};const start=new Date();start.setDate(start.getDate()-41);let wt=146.2;for(let i=0;i<42;i++){const dt=new Date(start);dt.setDate(start.getDate()+i);const date=dt.toISOString().slice(0,10),cycle=i%28+1;wt+=-.045+(Math.random()-.5)*.28+(cycle>=20?.04:0);state.days.push({date,weight:+wt.toFixed(1),calories:Math.round(1700+(Math.random()-.5)*180),protein:Math.round(142+(Math.random()-.5)*18),carbs:Math.round(185+(Math.random()-.5)*35),fiber:Math.round(30+(Math.random()-.5)*8),steps:Math.round(9000+(Math.random()-.5)*4500),sleep:+(7.2+(Math.random()-.5)*1.4).toFixed(1),hunger:Math.round(3+(Math.random()-.5)*2),energy:Math.round(3+(Math.random()-.5)*2),sodium:Math.round(2200+(Math.random()-.5)*850),water:2.2,alcohol:i%9===0?2:0,stress:Math.max(1,Math.min(5,Math.round(3+(Math.random()-.5)*2))),recovery:Math.max(1,Math.min(5,Math.round(3.4+(Math.random()-.5)*2))),cardio:i%3===0?30:0,cardioType:i%3===0?'Incline walk':'',waist:i%7===0?+(29.8-i*.015+(Math.random()-.5)*.15).toFixed(1):null,training:['Push','Pull','Legs','Rest'][i%4],cycleDay:cycle})}state.periodStarts=[state.days[0].date,state.days[28].date];['Lat Pulldown','DB Bench Press','Romanian Deadlift'].forEach((lift,j)=>{for(let i=0;i<6;i++)state.lifts.push({date:state.days[i*7+j].date,lift,weight:[80,30,95][j]+i*[2.5,2.5,5][j],reps:8+i%2,rpe:7.5+(i%3)*.5,rir:2-(i%2)*.5})});save()}
+function seedDemo(){if(!confirm('Replace current data with demo data?'))return;state={settings:{calories:1700,protein:140,fiber:30,carbs:185,loss:.5,cycle:28,luteal:14,cycleEnabled:true,roastEnabled:true},profile:{age:25,sex:'female',heightFt:5,heightIn:8,weight:146,activity:1.55},days:[],lifts:[],periodStarts:[]};const start=new Date();start.setDate(start.getDate()-41);let wt=146.2;for(let i=0;i<42;i++){const dt=new Date(start);dt.setDate(start.getDate()+i);const date=dt.toISOString().slice(0,10),cycle=i%28+1;wt+=-.045+(Math.random()-.5)*.28+(cycle>=20?.04:0);state.days.push({date,weight:+wt.toFixed(1),calories:Math.round(1700+(Math.random()-.5)*180),protein:Math.round(142+(Math.random()-.5)*18),carbs:Math.round(185+(Math.random()-.5)*35),fiber:Math.round(30+(Math.random()-.5)*8),steps:Math.round(9000+(Math.random()-.5)*4500),sleep:+(7.2+(Math.random()-.5)*1.4).toFixed(1),sodium:Math.round(2200+(Math.random()-.5)*850),water:2.2,alcohol:i%9===0?2:0,hunger:i%11===0?'very_hungry':i%4===0?'hungry':'normal',cravings:i%10===0?1:0,tags:i%13===0?['high_stress']:[],notes:i%13===0?'Busy stressful day':'',cardio:i%3===0?30:0,cardioType:i%3===0?'Incline walk':'',waist:i%7===0?+(29.8-i*.015+(Math.random()-.5)*.15).toFixed(1):null,training:['Push','Pull','Legs','Rest'][i%4],cycleDay:cycle})}state.periodStarts=[state.days[0].date,state.days[28].date];['Lat Pulldown','DB Bench Press','Romanian Deadlift'].forEach((lift,j)=>{for(let i=0;i<6;i++)state.lifts.push({date:state.days[i*7+j].date,lift,weight:[80,30,95][j]+i*[2.5,2.5,5][j],reps:8+i%2,rpe:7.5+(i%3)*.5,rir:2-(i%2)*.5})});save()}
 function resetTrackingData(){
  if(!confirm('Clear all logged weight, nutrition, workout, waist and cycle history? Your settings and targets will be kept.'))return;
  state.days=[];
