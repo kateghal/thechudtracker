@@ -38,8 +38,23 @@
     .icon{width:34px;height:34px;border-radius:10px;background:var(--sage2);display:grid;place-items:center;font-weight:850;flex:0 0 auto}
     .coach strong{display:block;font-size:13px;margin-bottom:3px}.coach span{font-size:12px;line-height:1.45;color:var(--muted)}
     .pill{display:inline-flex;padding:6px 9px;border-radius:999px;background:var(--sage2);font-size:11px;font-weight:750;color:var(--forest);margin-top:8px}
-    .form{display:grid;gap:12px}.form.two{grid-template-columns:1fr 1fr}
-    label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:12px;font-weight:700}
+    .form{display:grid;gap:14px}.form.two{grid-template-columns:1fr 1fr}
+    label{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:12px;font-weight:700;min-width:0}
+    .fieldgroup{padding:14px;border:1px solid var(--border);border-radius:14px;background:#fbfcfb}
+    .fieldgroup .label{margin-bottom:10px}
+    .loggrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .fullspan{grid-column:1/-1}
+    .viewtoggle{display:inline-grid;grid-template-columns:1fr 1fr;background:var(--panel2);border-radius:11px;padding:3px;gap:3px}
+    .viewtoggle button{border:0;background:transparent;color:var(--muted);font-size:11px;font-weight:800;padding:7px 10px;border-radius:8px}
+    .viewtoggle button.active{background:white;color:var(--forest);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .entrycards{display:grid;gap:10px}
+    .entrycard{border:1px solid var(--border);border-radius:14px;padding:13px;background:white}
+    .entrytop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+    .entrydate{font-weight:850;font-size:13px}
+    .entrymeta{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .entrymeta div{background:var(--panel2);border-radius:9px;padding:8px}
+    .entrymeta span{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:800}
+    .entrymeta b{display:block;font-size:12px;margin-top:2px}
     input,select,textarea{width:100%;border:1px solid var(--border);background:white;color:var(--text);padding:13px 12px;border-radius:12px;min-height:46px}
     input[type="range"]{padding:0;border:0;background:transparent;min-height:28px;accent-color:var(--forest)}
     .sliderbox{display:grid;grid-template-columns:1fr 34px;gap:10px;align-items:center}
@@ -66,7 +81,11 @@
     .moregrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .moregrid button{border:1px solid var(--border);background:white;border-radius:16px;padding:18px;text-align:left;font-weight:800;color:var(--text)}
     .moregrid span{display:block;color:var(--muted);font-size:11px;font-weight:600;margin-top:4px}
-    @media(max-width:430px){.grid,.form.two,.actions,.moregrid{grid-template-columns:1fr}.metric{font-size:25px}}
+    @media(max-width:430px){
+      .grid,.form.two,.actions,.moregrid,.loggrid{grid-template-columns:1fr}
+      .metric{font-size:25px}
+      .entrymeta{grid-template-columns:repeat(2,1fr)}
+    }
   </style>
 </head>
 <body>
@@ -81,7 +100,7 @@
     <div class="hero">
       <h2 id="headline">Loading today’s insult…</h2>
       <p id="narrative">The Chud Tracker is checking whether you got stronger or just developed opinions about creatine.</p>
-      <span class="roasttag">Chud Coach · v15</span>
+      <span class="roasttag">Chud Coach · v16</span>
     </div>
 
     <div class="section-title"><h2>Weekly review</h2><span>decision, not noise</span></div>
@@ -118,59 +137,91 @@
   </section>
 
   <section id="log" class="screen">
-    <div class="section-title"><h2>Daily check-in</h2><span>60 seconds</span></div>
+    <div class="section-title"><h2>Daily check-in</h2><span>fast enough to use every day</span></div>
+
     <div class="card">
-      <div class="form two">
-        <label>Date<input id="dDate" type="date"></label>
-        <label>Morning weight (lb)<input id="dWeight" type="number" step=".1" inputmode="decimal"></label>
-        <label>Calories<input id="dCalories" type="number" inputmode="numeric"></label>
-        <label>Protein (g)<input id="dProtein" type="number" inputmode="numeric"></label>
-        <label>Carbs (g)<input id="dCarbs" type="number" inputmode="numeric"></label>
-        <label>Fiber (g)<input id="dFiber" type="number" inputmode="numeric"></label>
-        <label>Steps<input id="dSteps" type="number" inputmode="numeric"></label>
-        <label>Sleep (hours)<input id="dSleep" type="number" step=".1" inputmode="decimal"></label>
-        <label>Hunger / diet difficulty
-          <select id="dHunger">
-            <option value="">Not logged</option>
-            <option value="normal">Normal</option>
-            <option value="hungry">Noticeably hungry</option>
-            <option value="very_hungry">Very hungry / affected behavior</option>
-          </select>
-        </label>
-        <label>Cravings / unplanned eating?
-          <select id="dCravings">
-            <option value="">Not logged</option>
-            <option value="0">No</option>
-            <option value="1">Yes</option>
-          </select>
-        </label>
-        <label>Sodium (mg)<input id="dSodium" type="number" inputmode="numeric"></label>
-        <label>Water (liters)<input id="dWater" type="number" step=".1" inputmode="decimal"></label>
-        <label>Alcohol (standard drinks)<input id="dAlcohol" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
-        <label>Cardio minutes<input id="dCardio" type="number" inputmode="numeric"></label>
-        <label>Cardio type<input id="dCardioType" placeholder="Incline walk / run / bike"></label>
-        <label>Training<input id="dTraining" placeholder="Push / Pull / Legs / Rest"></label>
-        <label>Waist (in, optional)<input id="dWaist" type="number" step=".1" inputmode="decimal" placeholder="Weekly is enough"></label>
-        <label>Context tags
-          <select id="dTag" multiple size="4">
-            <option value="high_stress">High stress</option>
-            <option value="travel">Travel</option>
-            <option value="sick">Sick</option>
-            <option value="restaurant">Restaurant / unusual meal</option>
-            <option value="poor_sleep">Poor sleep</option>
-            <option value="other">Other unusual day</option>
-          </select>
-        </label>
-        <label>Daily notes<textarea id="dNotes" placeholder="Optional context: terrible workday, drinks with friends, felt unusually hungry, etc."></textarea></label>
-        <label class="cycleOnly">Cycle day<input id="dCycle" type="number" min="1"></label>
+      <div class="fieldgroup">
+        <div class="label">Core tracking</div>
+        <div class="loggrid">
+          <label>Date<input id="dDate" type="date"></label>
+          <label>Morning weight (lb)<input id="dWeight" type="number" step=".1" inputmode="decimal"></label>
+          <label>Calories<input id="dCalories" type="number" inputmode="numeric"></label>
+          <label>Protein (g)<input id="dProtein" type="number" inputmode="numeric"></label>
+          <label>Carbs (g)<input id="dCarbs" type="number" inputmode="numeric"></label>
+          <label>Fiber (g)<input id="dFiber" type="number" inputmode="numeric"></label>
+          <label>Steps<input id="dSteps" type="number" inputmode="numeric"></label>
+          <label>Sleep (hours)<input id="dSleep" type="number" step=".1" inputmode="decimal"></label>
+        </div>
       </div>
-      <div class="actions" style="grid-template-columns:1fr">
+
+      <div class="fieldgroup" style="margin-top:12px">
+        <div class="label">Diet difficulty & context</div>
+        <div class="loggrid">
+          <label>Hunger / diet difficulty
+            <select id="dHunger">
+              <option value="">Not logged</option>
+              <option value="normal">Normal</option>
+              <option value="hungry">Noticeably hungry</option>
+              <option value="very_hungry">Very hungry / affected behavior</option>
+            </select>
+          </label>
+          <label>Cravings / unplanned eating?
+            <select id="dCravings">
+              <option value="">Not logged</option>
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </label>
+          <label>Sodium (mg)<input id="dSodium" type="number" inputmode="numeric"></label>
+          <label>Water (liters)<input id="dWater" type="number" step=".1" inputmode="decimal"></label>
+          <label>Alcohol (standard drinks)<input id="dAlcohol" type="number" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+          <label>Cardio minutes<input id="dCardio" type="number" inputmode="numeric"></label>
+          <label>Cardio type<input id="dCardioType" placeholder="Incline walk / run / bike"></label>
+          <label>Training<input id="dTraining" placeholder="Push / Pull / Legs / Rest"></label>
+          <label>Waist (in, optional)<input id="dWaist" type="number" step=".1" inputmode="decimal" placeholder="Weekly is enough"></label>
+          <label class="cycleOnly">Cycle day<input id="dCycle" type="number" min="1"></label>
+        </div>
+      </div>
+
+      <div class="fieldgroup" style="margin-top:12px">
+        <div class="label">Optional context</div>
+        <div class="loggrid">
+          <label>Context tags
+            <select id="dTag" multiple size="4">
+              <option value="high_stress">High stress</option>
+              <option value="travel">Travel</option>
+              <option value="sick">Sick</option>
+              <option value="restaurant">Restaurant / unusual meal</option>
+              <option value="poor_sleep">Poor sleep</option>
+              <option value="other">Other unusual day</option>
+            </select>
+          </label>
+          <label>Daily notes<textarea id="dNotes" placeholder="Optional context: drinks with friends, felt unusually hungry, travel day, etc."></textarea></label>
+        </div>
+      </div>
+
+      <div class="actions" style="grid-template-columns:1fr;margin-top:14px">
         <button class="btn" id="saveDayBtn" onclick="saveDay()">Save day</button>
         <button class="btn ghost" id="deleteDayBtn" style="display:none;margin-top:8px" onclick="deleteDay($('dDate').value)">Delete this day</button>
       </div>
     </div>
-    <div class="section-title"><h2>Recent entries</h2></div>
-    <div class="card tablewrap"><table><thead><tr><th>Date</th><th>Wt</th><th>Cal</th><th>Protein</th><th>Fiber</th><th>Sleep</th><th></th></tr></thead><tbody id="dailyTable"></tbody></table></div>
+
+    <div class="section-title">
+      <h2>Logged data</h2>
+      <div class="viewtoggle">
+        <button id="viewCardsBtn" class="active" onclick="setLogView('cards')">Cards</button>
+        <button id="viewTableBtn" onclick="setLogView('table')">Table</button>
+      </div>
+    </div>
+
+    <div id="dailyCards" class="entrycards"></div>
+
+    <div id="dailyTableWrap" class="card tablewrap" style="display:none">
+      <table>
+        <thead><tr><th>Date</th><th>Wt</th><th>Cal</th><th>Protein</th><th>Fiber</th><th>Sleep</th><th></th></tr></thead>
+        <tbody id="dailyTable"></tbody>
+      </table>
+    </div>
   </section>
 
   <section id="strength" class="screen">
@@ -703,11 +754,44 @@ function renderHome(){
  $('weekWeight').textContent=sl==null?'—':`${sl*7>=0?'+':''}${fmt(sl*7,2)} lb/wk`;
  $('weekAdherence').textContent=adh==null?'—':adh+'%';
 }
+let logView=localStorage.getItem('chudLogView')||'cards';
+
+function setLogView(view){
+ logView=view;
+ localStorage.setItem('chudLogView',view);
+ if($('dailyCards'))$('dailyCards').style.display=view==='cards'?'grid':'none';
+ if($('dailyTableWrap'))$('dailyTableWrap').style.display=view==='table'?'block':'none';
+ if($('viewCardsBtn'))$('viewCardsBtn').classList.toggle('active',view==='cards');
+ if($('viewTableBtn'))$('viewTableBtn').classList.toggle('active',view==='table');
+}
+
 function renderDaily(){
- $('dailyTable').innerHTML=daysSorted().slice(-12).reverse().map(x=>`<tr>
+ const rows=daysSorted().slice(-30).reverse();
+
+ $('dailyTable').innerHTML=rows.map(x=>`<tr>
    <td>${x.date}</td><td>${fmt(x.weight,1)}</td><td>${fmt(x.calories)}</td><td>${fmt(x.protein)}</td><td>${fmt(x.fiber)}</td><td>${fmt(x.sleep,1)}</td>
    <td><button class="btn ghost" style="padding:7px 9px;min-height:auto;width:auto" onclick="editDay('${x.date}')">Edit</button></td>
  </tr>`).join('');
+
+ $('dailyCards').innerHTML=rows.map(x=>`<div class="entrycard">
+   <div class="entrytop">
+     <div>
+       <div class="entrydate">${shortDate(x.date)}</div>
+       <div class="note">${x.training||'No training logged'}${x.notes?` · ${x.notes}`:''}</div>
+     </div>
+     <button class="btn ghost" style="padding:7px 10px;min-height:auto;width:auto" onclick="editDay('${x.date}')">Edit</button>
+   </div>
+   <div class="entrymeta">
+     <div><span>Weight</span><b>${fmt(x.weight,1)} lb</b></div>
+     <div><span>Calories</span><b>${fmt(x.calories)}</b></div>
+     <div><span>Protein</span><b>${fmt(x.protein)}g</b></div>
+     <div><span>Fiber</span><b>${fmt(x.fiber)}g</b></div>
+     <div><span>Sleep</span><b>${fmt(x.sleep,1)} hr</b></div>
+     <div><span>Steps</span><b>${fmt(x.steps)}</b></div>
+   </div>
+ </div>`).join('');
+
+ setLogView(logView);
 }
 function editDay(date){
  const x=state.days.find(d=>d.date===date);if(!x)return;
