@@ -78,7 +78,7 @@
     <div class="hero">
       <h2 id="headline">Loading today’s insult…</h2>
       <p id="narrative">The Chud Tracker is checking whether you got stronger or just developed opinions about creatine.</p>
-      <span class="roasttag">Chud Coach · v9</span>
+      <span class="roasttag">Chud Coach · v10</span>
     </div>
 
     <div class="section-title"><h2>Weekly review</h2><span>decision, not noise</span></div>
@@ -204,6 +204,7 @@
       <button onclick="openSub('import')">Import<span>MyFitnessPal-style CSV</span></button>
       <button onclick="openSub('backup')">Backup<span>export your local data</span></button>
       <button onclick="seedDemo()">Demo data<span>preview 6 weeks of history</span></button>
+      <button onclick="resetTrackingData()">Clear demo / data<span>remove all logs, keep settings</span></button>
     </div>
 
     <div id="settings" style="display:none;margin-top:14px" class="card">
@@ -536,6 +537,15 @@ function csvParse(text){const lines=text.trim().split(/\r?\n/),heads=lines[0].sp
 function importCSV(){const text=$('csvText').value;if(!text.trim())return alert('Paste CSV first.');const {heads,rows}=csvParse(text),find=(...ks)=>heads.findIndex(h=>ks.some(k=>h.includes(k))),idx={date:find('date'),calories:find('calories'),protein:find('protein'),carbs:find('carbohydrate','carbs'),fiber:find('fiber'),weight:find('weight')};let count=0;rows.forEach(r=>{if(idx.date<0||!r[idx.date])return;const dt=new Date(r[idx.date]);if(isNaN(dt))return;const ds=dt.toISOString().slice(0,10),o={date:ds};for(const [k,i] of Object.entries(idx))if(k!=='date'&&i>=0&&r[i]!==''&&!isNaN(Number(r[i])))o[k]=Number(r[i]);const j=state.days.findIndex(x=>x.date===ds);if(j>=0)state.days[j]={...state.days[j],...o};else state.days.push(o);count++});save();alert(`Imported ${count} rows.`)}
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='the-chud-tracker-backup.json';a.click();URL.revokeObjectURL(a.href)}
 function seedDemo(){if(!confirm('Replace current data with demo data?'))return;state={settings:{calories:1700,protein:140,fiber:30,carbs:185,loss:.5,cycle:28,luteal:14,cycleEnabled:true,roastEnabled:true},days:[],lifts:[],periodStarts:[]};const start=new Date();start.setDate(start.getDate()-41);let wt=146.2;for(let i=0;i<42;i++){const dt=new Date(start);dt.setDate(start.getDate()+i);const date=dt.toISOString().slice(0,10),cycle=i%28+1;wt+=-.045+(Math.random()-.5)*.28+(cycle>=20?.04:0);state.days.push({date,weight:+wt.toFixed(1),calories:Math.round(1700+(Math.random()-.5)*180),protein:Math.round(142+(Math.random()-.5)*18),carbs:Math.round(185+(Math.random()-.5)*35),fiber:Math.round(30+(Math.random()-.5)*8),steps:Math.round(9000+(Math.random()-.5)*4500),sleep:+(7.2+(Math.random()-.5)*1.4).toFixed(1),hunger:Math.round(3+(Math.random()-.5)*2),energy:Math.round(3+(Math.random()-.5)*2),sodium:Math.round(2200+(Math.random()-.5)*850),water:2.2,stress:Math.max(1,Math.min(5,Math.round(3+(Math.random()-.5)*2))),recovery:Math.max(1,Math.min(5,Math.round(3.4+(Math.random()-.5)*2))),cardio:i%3===0?30:0,cardioType:i%3===0?'Incline walk':'',waist:i%7===0?+(29.8-i*.015+(Math.random()-.5)*.15).toFixed(1):null,training:['Push','Pull','Legs','Rest'][i%4],cycleDay:cycle})}state.periodStarts=[state.days[0].date,state.days[28].date];['Lat Pulldown','DB Bench Press','Romanian Deadlift'].forEach((lift,j)=>{for(let i=0;i<6;i++)state.lifts.push({date:state.days[i*7+j].date,lift,weight:[80,30,95][j]+i*[2.5,2.5,5][j],reps:8+i%2,rpe:7.5+(i%3)*.5,rir:2-(i%2)*.5})});save()}
+function resetTrackingData(){
+ if(!confirm('Clear all logged weight, nutrition, workout, waist and cycle history? Your settings and targets will be kept.'))return;
+ state.days=[];
+ state.lifts=[];
+ state.periodStarts=[];
+ localStorage.setItem(K,JSON.stringify(state));
+ renderAll();
+ alert('Tracking data cleared. Your settings and targets were kept.');
+}
 function renderAll(){renderHome();renderDaily();renderStrength();renderInsights();loadSettings();applyCycleVisibility()}
 const today=new Date().toISOString().slice(0,10);$('dDate').value=today;$('sDate').value=today;$('setCycleEnabled').addEventListener('change',()=>{state.settings.cycleEnabled=$('setCycleEnabled').value==='1';applyCycleVisibility()});renderAll();
 if('serviceWorker' in navigator){
