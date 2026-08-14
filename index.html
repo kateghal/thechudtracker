@@ -28,6 +28,7 @@
     .hero,.card{background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow)}
     .hero{padding:18px;background:linear-gradient(135deg,#fbfdfb,#edf4ef)}
     .hero h2{margin:0;font-size:20px;letter-spacing:-.3px}.hero p{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
+    .roasttag{display:inline-block;margin-top:10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--forest);background:var(--sage2);padding:5px 8px;border-radius:999px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
     .card{padding:16px}.label{font-size:11px;text-transform:uppercase;letter-spacing:.65px;color:var(--muted);font-weight:750}
     .metric{font-size:27px;font-weight:850;letter-spacing:-.8px;margin:7px 0 2px}.delta{font-size:11px;color:var(--muted)}
@@ -74,8 +75,9 @@
 <main>
   <section id="home" class="screen active">
     <div class="hero">
-      <h2 id="headline">Your body is a trend, not a datapoint.</h2>
-      <p id="narrative">Log consistently and The Chud Tracker will tell you whether to hold, cut, eat more, or simply ignore scale noise.</p>
+      <h2 id="headline">Loading today’s insult…</h2>
+      <p id="narrative">The Chud Tracker is checking whether you got stronger or just developed opinions about creatine.</p>
+      <span class="roasttag">Chud Coach · v5</span>
     </div>
     <div class="grid">
       <div class="card"><div class="label">Trend weight</div><div class="metric" id="trendWeight">—</div><div class="delta" id="trendDelta">7-day smoothed</div></div>
@@ -195,6 +197,7 @@
         <label>Carbs (g)<input id="setCarbs" type="number"></label>
         <label>Goal loss/wk (lb)<input id="setLoss" type="number" step=".1"></label>
         <label>Cycle tracking<select id="setCycleEnabled"><option value="1">On</option><option value="0">Off</option></select></label>
+        <label>Roast mode<select id="setRoastEnabled"><option value="1">On</option><option value="0">Off</option></select></label>
         <label class="cycleOnly">Cycle length<input id="setCycle" type="number"></label>
         <label class="cycleOnly">Luteal length<input id="setLuteal" type="number"></label>
       </div>
@@ -226,10 +229,11 @@
 <script>
 const K='chudTrackerPWA_v1';
 let state=JSON.parse(localStorage.getItem(K)||'null')||{
- settings:{calories:1700,protein:140,fiber:30,carbs:185,loss:.5,cycle:28,luteal:14,cycleEnabled:true},
+ settings:{calories:1700,protein:140,fiber:30,carbs:185,loss:.5,cycle:28,luteal:14,cycleEnabled:true,roastEnabled:true},
  days:[],lifts:[],periodStarts:[]
 };
 if(state.settings.cycleEnabled===undefined) state.settings.cycleEnabled=true;
+if(state.settings.roastEnabled===undefined) state.settings.roastEnabled=true;
 const $=id=>document.getElementById(id), mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null, sum=a=>a.reduce((x,y)=>x+y,0), clamp=(x,a,b)=>Math.max(a,Math.min(b,x)), fmt=(x,d=0)=>x==null||!isFinite(x)?'—':Number(x).toFixed(d), num=v=>v===''?null:Number(v);
 const byDate=(a,b)=>new Date(a.date)-new Date(b.date), daysSorted=()=>[...state.days].sort(byDate);
 const save=()=>{localStorage.setItem(K,JSON.stringify(state));renderAll()};
@@ -252,7 +256,100 @@ function adaptiveTDEE(){const d=daysSorted().filter(x=>x.weight!=null&&x.calorie
 function bestLiftByDay(){const m={};state.lifts.forEach(x=>{const e=x.weight*(1+x.reps/30),k=x.date+'|'+x.lift.toLowerCase();if(!m[k]||e>m[k].e)m[k]={...x,e}});return Object.values(m).sort(byDate)}
 function strengthMomentum(){const b=bestLiftByDay(),names=[...new Set(b.map(x=>x.lift.toLowerCase()))],sl=[];names.forEach(n=>{const s=b.filter(x=>x.lift.toLowerCase()===n).slice(-8);if(s.length>=3){const q=linearSlope(s.map(x=>x.e));if(q!=null)sl.push(q*7)}});return sl.length?mean(sl):null}
 function renderLine(id,a,b=null){const svg=$(id);svg.innerHTML='';const all=[...a,...(b||[])].filter(x=>x!=null);if(all.length<2){svg.innerHTML='<text x="14" y="34" fill="#728078" font-size="12">Not enough data yet.</text>';return}const W=760,H=210,p=22,min=Math.min(...all),max=Math.max(...all),rng=max-min||1,x=i=>p+(W-2*p)*(i/Math.max(1,Math.max(a.length,(b||[]).length)-1)),y=v=>H-p-(H-2*p)*((v-min)/rng),path=s=>s.map((v,i)=>v==null?null:`${i?'L':'M'} ${x(i)} ${y(v)}`).filter(Boolean).join(' ');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);[0,.5,1].forEach(t=>svg.innerHTML+=`<line class="axis" x1="${p}" x2="${W-p}" y1="${p+t*(H-2*p)}" y2="${p+t*(H-2*p)}"/>`);svg.innerHTML+=`<path class="line" d="${path(a)}"/>`;if(b)svg.innerHTML+=`<path class="line2" d="${path(b)}"/>`}
-function renderHome(){const d=daysSorted(),trend=movingAvg(d,'weight',7),lt=[...trend].reverse().find(x=>x!=null),t=adaptiveTDEE(),avg=mean(d.slice(-28).map(x=>x.calories).filter(x=>x!=null)),def=t.value&&avg?t.value-avg:null,sm=strengthMomentum();$('trendWeight').textContent=lt==null?'—':fmt(lt,1)+' lb';const sl=linearSlope(trend.slice(-14));$('trendDelta').textContent=sl==null?'7-day smoothed':`${sl<0?'↓':'↑'} ${fmt(Math.abs(sl*7),2)} lb/week`;$('adaptiveTdee').textContent=t.value?fmt(t.value)+' kcal':'—';$('deficit').textContent=def==null?'—':fmt(def)+' kcal';$('strengthMomentum').textContent=sm==null?'—':`${sm>=0?'+':''}${fmt(sm,1)} lb/wk`;renderLine('weightChart',d.map(x=>x.weight),trend);const phase=state.settings.cycleEnabled&&d.length?phaseForDay(d[d.length-1].cycleDay||inferCycleDay(d[d.length-1].date)):'—';$('phasePill').textContent='Cycle: '+phase;const n=d.filter(x=>x.weight!=null&&x.calories!=null).length;let h='Your body is a trend, not a datapoint.',p='Log consistently and The Chud Tracker will tell you whether to hold, cut, eat more, or simply ignore scale noise.';if(n>=14&&t.weekly!=null){if(t.weekly<-0.9){h='Your deficit may be more aggressive than necessary.';p='If hunger, energy or strength are deteriorating, add food before adding more cardio.'}else if(t.weekly<=-.1){h='The current plan is producing a usable fat-loss signal.';p='Hold calories unless strength or recovery deteriorates. Stability makes the model smarter.'}else{h='Your trend is close to maintenance right now.';p='If strength is improving, holding can still support recomp. If not, wait for another week before making a small change.'}}$('headline').textContent=h;$('narrative').textContent=p}
+
+const ROASTS=[
+ ["A year and a half of lifting and this is what you have to show for it?","Log the numbers. Maybe there is progress hiding somewhere."],
+ ["140 grams of protein just to stay this weak is impressive.","At least the macros are committed."],
+ ["You are putting more effort into tracking your workouts than your workouts.","The spreadsheet cannot lift for you."],
+ ["Progressive overload is still mostly theoretical for you.","Put something heavier on the bar."],
+ ["You’ve optimized everything except effort.","There is no setting for trying harder."],
+ ["You don’t need a new program.","You need to stop training like getting tired is an emergency."],
+ ["Another week maintaining strength you barely had.","Aim higher."],
+ ["You’ve spent more time analyzing your physique than building one.","Close the dashboard eventually."],
+ ["Stop blaming the deficit.","You were weak before the deficit."],
+ ["Your muscles have had plenty of time to respond.","Give them an actual reason."],
+ ["The data is getting sophisticated. Your lifts are not.","Fix the important variable."],
+ ["You’re tracking RPE now.","Maybe eventually you’ll experience one above 6."],
+ ["You keep looking for the optimal routine.","Effort is not hiding in the settings menu."],
+ ["At least your consistency problem explains the results.","Mystery solved."],
+ ["You built an entire app to document mediocrity more accurately.","Now give it better data."],
+ ["You are not plateauing.","You just have not gotten stronger."],
+ ["The scale is not your biggest problem.","The barbell has seen the numbers too."],
+ ["You logged it. Congratulations.","Now do something worth logging."],
+ ["Your workout history reads like a negotiation.","The weights do not care how you felt about the terms."],
+ ["You have enough information.","Lack of knowledge is no longer a credible excuse."],
+ ["Your potential remains completely unthreatened.","So far, you have barely disturbed it."],
+ ["The good news is there is room for improvement.","An uncomfortable amount of room."],
+ ["Consistency would look great on you.","You should try it sometime."],
+ ["Your warm-up has more ambition than your working sets.","Correct that."],
+ ["Nothing about this requires another optimization.","It requires execution."],
+ ["You cannot spreadsheet your way into being strong.","Unfortunately, reps remain mandatory."],
+ ["The numbers are not judging you.","I am."],
+ ["You came here for data.","The data says try harder."],
+ ["Your excuses have excellent progressive overload.","Everything else could learn from them."],
+ ["If this feels unfair, get stronger.","That should resolve the issue."]
+];
+
+function dataDrivenRoast(){
+ const d=daysSorted(), recent=d.slice(-7), latest=d[d.length-1], lifts=[...state.lifts].sort(byDate), sm=strengthMomentum();
+ if(!latest) return null;
+
+ // Missing/low protein
+ if(latest.protein!=null && state.settings.protein && latest.protein < state.settings.protein*.70)
+   return ["You had one nutritional objective.",`${fmt(latest.protein)}g of protein against a ${fmt(state.settings.protein)}g target. Embarrassing.`];
+
+ // Very low steps
+ if(latest.steps!=null && latest.steps<4000)
+   return ["You moved less than some houseplants today.",`${fmt(latest.steps)} steps. At least the couch got quality time.`];
+
+ // Very poor sleep
+ if(latest.sleep!=null && latest.sleep<5.5)
+   return [`${fmt(latest.sleep,1)} hours of sleep.`,"Apparently recovery was optional."];
+
+ // Multiple recent rest/no-training days
+ const restish=recent.filter(x=>!x.training || /rest/i.test(x.training)).length;
+ if(recent.length>=5 && restish>=4)
+   return ["You’ve recovered from workouts you haven’t even done yet.",`${restish} of your last ${recent.length} logged days were rest or untrained.`];
+
+ // Strength declining
+ if(sm!=null && sm < -1)
+   return ["Losing weight and strength. Excellent work losing both kinds of mass.",`Your estimated strength trend is ${fmt(sm,1)} lb/week.`];
+
+ // No meaningful strength progress with enough history
+ if(lifts.length>=10 && sm!=null && Math.abs(sm)<.25)
+   return ["Six weeks of data and the weights still look familiar.","At some point the trend line needs to move."];
+
+ // Calories materially over target on latest day
+ if(latest.calories!=null && state.settings.calories && latest.calories>state.settings.calories+350)
+   return ["That was not a rounding error.",`${fmt(latest.calories)} calories against a ${fmt(state.settings.calories)} target.`];
+
+ // Fiber miss
+ if(latest.fiber!=null && state.settings.fiber && latest.fiber<state.settings.fiber*.55)
+   return ["Your hunger tomorrow has already filed the paperwork.",`${fmt(latest.fiber)}g of fiber. You knew better.`];
+
+ return null;
+}
+
+function pickRoast(){
+ if(!state.settings.roastEnabled) return ["Your body is a trend, not a datapoint.","Log consistently and use the signal, not one noisy day, to make decisions."];
+ const contextual=dataDrivenRoast();
+ if(contextual && Math.random()<.70) return contextual;
+ const last=Number(sessionStorage.getItem('chudLastRoast')||-1);
+ let i=Math.floor(Math.random()*ROASTS.length);
+ if(ROASTS.length>1&&i===last)i=(i+1)%ROASTS.length;
+ sessionStorage.setItem('chudLastRoast',String(i));
+ return ROASTS[i];
+}
+function renderHome(){const d=daysSorted(),trend=movingAvg(d,'weight',7),lt=[...trend].reverse().find(x=>x!=null),t=adaptiveTDEE(),avg=mean(d.slice(-28).map(x=>x.calories).filter(x=>x!=null)),def=t.value&&avg?t.value-avg:null,sm=strengthMomentum();$('trendWeight').textContent=lt==null?'—':fmt(lt,1)+' lb';const sl=linearSlope(trend.slice(-14));$('trendDelta').textContent=sl==null?'7-day smoothed':`${sl<0?'↓':'↑'} ${fmt(Math.abs(sl*7),2)} lb/week`;$('adaptiveTdee').textContent=t.value?fmt(t.value)+' kcal':'—';$('deficit').textContent=def==null?'—':fmt(def)+' kcal';$('strengthMomentum').textContent=sm==null?'—':`${sm>=0?'+':''}${fmt(sm,1)} lb/wk`;renderLine('weightChart',d.map(x=>x.weight),trend);const phase=state.settings.cycleEnabled&&d.length?phaseForDay(d[d.length-1].cycleDay||inferCycleDay(d[d.length-1].date)):'—';$('phasePill').textContent='Cycle: '+phase;
+ const [rh,rp]=pickRoast();$('headline').textContent=rh;$('narrative').textContent=rp;
+ const n=d.filter(x=>x.weight!=null&&x.calories!=null).length;
+ if(n>=14&&t.weekly!=null){
+   let signal='';
+   if(t.weekly<-0.9)signal=' Model note: your deficit may be more aggressive than necessary.';
+   else if(t.weekly<=-.1)signal=' Model note: your current plan is producing a usable fat-loss signal.';
+   else signal=' Model note: your trend is close to maintenance right now.';
+   $('narrative').textContent=rp+signal;
+ }}
 function renderDaily(){$('dailyTable').innerHTML=daysSorted().slice(-12).reverse().map(x=>`<tr><td>${x.date}</td><td>${fmt(x.weight,1)}</td><td>${fmt(x.calories)}</td><td>${fmt(x.protein)}</td><td>${fmt(x.fiber)}</td><td>${fmt(x.sleep,1)}</td></tr>`).join('')}
 function saveDay(){const d={date:$('dDate').value,weight:num($('dWeight').value),calories:num($('dCalories').value),protein:num($('dProtein').value),carbs:num($('dCarbs').value),fiber:num($('dFiber').value),steps:num($('dSteps').value),sleep:num($('dSleep').value),hunger:num($('dHunger').value),energy:num($('dEnergy').value),stress:num($('dStress').value),recovery:num($('dRecovery').value),sodium:num($('dSodium').value),water:num($('dWater').value),cardio:num($('dCardio').value),cardioType:$('dCardioType').value,training:$('dTraining').value,waist:num($('dWaist').value),cycleDay:state.settings.cycleEnabled?num($('dCycle').value):null};if(!d.date)return alert('Choose a date.');const i=state.days.findIndex(x=>x.date===d.date);if(i>=0)state.days[i]={...state.days[i],...d};else state.days.push(d);save()}
 function markPeriod(){if(!state.settings.cycleEnabled)return;const date=$('dDate').value||new Date().toISOString().slice(0,10);if(!state.periodStarts.includes(date))state.periodStarts.push(date);$('dCycle').value=1;save()}
@@ -336,15 +433,28 @@ function renderInsights(){
    $('cycleInsight').innerHTML=phases.length?phases.map(x=>`<b>${x.p}</b>: average scale noise ${fmt(mean(x.a.map(v=>v.noise)),2)} lb; hunger ${fmt(mean(x.a.map(v=>v.hunger).filter(v=>v!=null)),1)}/5 (${x.a.length} days)`).join('<br><br>'):'Log at least a few days in each phase to build your personal cycle pattern.';
  }
 }
-function saveSettings(){state.settings={calories:num($('setCalories').value),protein:num($('setProtein').value),fiber:num($('setFiber').value),carbs:num($('setCarbs').value),loss:num($('setLoss').value),cycle:num($('setCycle').value)||28,luteal:num($('setLuteal').value)||14,cycleEnabled:$('setCycleEnabled').value==='1'};save()}
-function loadSettings(){for(const [id,key] of [['setCalories','calories'],['setProtein','protein'],['setFiber','fiber'],['setCarbs','carbs'],['setLoss','loss'],['setCycle','cycle'],['setLuteal','luteal']])$(id).value=state.settings[key];$('setCycleEnabled').value=state.settings.cycleEnabled?'1':'0';applyCycleVisibility()}
+function saveSettings(){state.settings={calories:num($('setCalories').value),protein:num($('setProtein').value),fiber:num($('setFiber').value),carbs:num($('setCarbs').value),loss:num($('setLoss').value),cycle:num($('setCycle').value)||28,luteal:num($('setLuteal').value)||14,cycleEnabled:$('setCycleEnabled').value==='1',roastEnabled:$('setRoastEnabled').value==='1'};save()}
+function loadSettings(){for(const [id,key] of [['setCalories','calories'],['setProtein','protein'],['setFiber','fiber'],['setCarbs','carbs'],['setLoss','loss'],['setCycle','cycle'],['setLuteal','luteal']])$(id).value=state.settings[key];$('setCycleEnabled').value=state.settings.cycleEnabled?'1':'0';$('setRoastEnabled').value=state.settings.roastEnabled?'1':'0';applyCycleVisibility()}
 function csvParse(text){const lines=text.trim().split(/\r?\n/),heads=lines[0].split(',').map(x=>x.trim().toLowerCase());return{heads,rows:lines.slice(1).map(l=>l.split(','))}}
 function importCSV(){const text=$('csvText').value;if(!text.trim())return alert('Paste CSV first.');const {heads,rows}=csvParse(text),find=(...ks)=>heads.findIndex(h=>ks.some(k=>h.includes(k))),idx={date:find('date'),calories:find('calories'),protein:find('protein'),carbs:find('carbohydrate','carbs'),fiber:find('fiber'),weight:find('weight')};let count=0;rows.forEach(r=>{if(idx.date<0||!r[idx.date])return;const dt=new Date(r[idx.date]);if(isNaN(dt))return;const ds=dt.toISOString().slice(0,10),o={date:ds};for(const [k,i] of Object.entries(idx))if(k!=='date'&&i>=0&&r[i]!==''&&!isNaN(Number(r[i])))o[k]=Number(r[i]);const j=state.days.findIndex(x=>x.date===ds);if(j>=0)state.days[j]={...state.days[j],...o};else state.days.push(o);count++});save();alert(`Imported ${count} rows.`)}
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='the-chud-tracker-backup.json';a.click();URL.revokeObjectURL(a.href)}
-function seedDemo(){if(!confirm('Replace current data with demo data?'))return;state={settings:{calories:1700,protein:140,fiber:30,carbs:185,loss:.5,cycle:28,luteal:14,cycleEnabled:true},days:[],lifts:[],periodStarts:[]};const start=new Date();start.setDate(start.getDate()-41);let wt=146.2;for(let i=0;i<42;i++){const dt=new Date(start);dt.setDate(start.getDate()+i);const date=dt.toISOString().slice(0,10),cycle=i%28+1;wt+=-.045+(Math.random()-.5)*.28+(cycle>=20?.04:0);state.days.push({date,weight:+wt.toFixed(1),calories:Math.round(1700+(Math.random()-.5)*180),protein:Math.round(142+(Math.random()-.5)*18),carbs:Math.round(185+(Math.random()-.5)*35),fiber:Math.round(30+(Math.random()-.5)*8),steps:Math.round(9000+(Math.random()-.5)*4500),sleep:+(7.2+(Math.random()-.5)*1.4).toFixed(1),hunger:Math.round(3+(Math.random()-.5)*2),energy:Math.round(3+(Math.random()-.5)*2),sodium:Math.round(2200+(Math.random()-.5)*850),water:2.2,stress:Math.max(1,Math.min(5,Math.round(3+(Math.random()-.5)*2))),recovery:Math.max(1,Math.min(5,Math.round(3.4+(Math.random()-.5)*2))),cardio:i%3===0?30:0,cardioType:i%3===0?'Incline walk':'',waist:i%7===0?+(29.8-i*.015+(Math.random()-.5)*.15).toFixed(1):null,training:['Push','Pull','Legs','Rest'][i%4],cycleDay:cycle})}state.periodStarts=[state.days[0].date,state.days[28].date];['Lat Pulldown','DB Bench Press','Romanian Deadlift'].forEach((lift,j)=>{for(let i=0;i<6;i++)state.lifts.push({date:state.days[i*7+j].date,lift,weight:[80,30,95][j]+i*[2.5,2.5,5][j],reps:8+i%2,rpe:7.5+(i%3)*.5,rir:2-(i%2)*.5})});save()}
+function seedDemo(){if(!confirm('Replace current data with demo data?'))return;state={settings:{calories:1700,protein:140,fiber:30,carbs:185,loss:.5,cycle:28,luteal:14,cycleEnabled:true,roastEnabled:true},days:[],lifts:[],periodStarts:[]};const start=new Date();start.setDate(start.getDate()-41);let wt=146.2;for(let i=0;i<42;i++){const dt=new Date(start);dt.setDate(start.getDate()+i);const date=dt.toISOString().slice(0,10),cycle=i%28+1;wt+=-.045+(Math.random()-.5)*.28+(cycle>=20?.04:0);state.days.push({date,weight:+wt.toFixed(1),calories:Math.round(1700+(Math.random()-.5)*180),protein:Math.round(142+(Math.random()-.5)*18),carbs:Math.round(185+(Math.random()-.5)*35),fiber:Math.round(30+(Math.random()-.5)*8),steps:Math.round(9000+(Math.random()-.5)*4500),sleep:+(7.2+(Math.random()-.5)*1.4).toFixed(1),hunger:Math.round(3+(Math.random()-.5)*2),energy:Math.round(3+(Math.random()-.5)*2),sodium:Math.round(2200+(Math.random()-.5)*850),water:2.2,stress:Math.max(1,Math.min(5,Math.round(3+(Math.random()-.5)*2))),recovery:Math.max(1,Math.min(5,Math.round(3.4+(Math.random()-.5)*2))),cardio:i%3===0?30:0,cardioType:i%3===0?'Incline walk':'',waist:i%7===0?+(29.8-i*.015+(Math.random()-.5)*.15).toFixed(1):null,training:['Push','Pull','Legs','Rest'][i%4],cycleDay:cycle})}state.periodStarts=[state.days[0].date,state.days[28].date];['Lat Pulldown','DB Bench Press','Romanian Deadlift'].forEach((lift,j)=>{for(let i=0;i<6;i++)state.lifts.push({date:state.days[i*7+j].date,lift,weight:[80,30,95][j]+i*[2.5,2.5,5][j],reps:8+i%2,rpe:7.5+(i%3)*.5,rir:2-(i%2)*.5})});save()}
 function renderAll(){renderHome();renderDaily();renderStrength();renderInsights();loadSettings();applyCycleVisibility()}
 const today=new Date().toISOString().slice(0,10);$('dDate').value=today;$('sDate').value=today;$('setCycleEnabled').addEventListener('change',()=>{state.settings.cycleEnabled=$('setCycleEnabled').value==='1';applyCycleVisibility()});renderAll();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+if('serviceWorker' in navigator){
+ window.addEventListener('load',async()=>{
+   try{
+     const reg=await navigator.serviceWorker.register('./sw.js');
+     reg.update();
+     let refreshed=false;
+     navigator.serviceWorker.addEventListener('controllerchange',()=>{
+       if(refreshed)return;
+       refreshed=true;
+       window.location.reload();
+     });
+   }catch(e){}
+ });
+}
 </script>
 </body>
 </html>
